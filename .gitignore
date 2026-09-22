@@ -1,0 +1,6 @@
+config/config.php
+storage/sessions/*
+!storage/sessions/.gitkeep
+.git
+.env
+*.zip

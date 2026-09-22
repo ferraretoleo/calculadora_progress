@@ -1,4 +1,9 @@
 <?php
+// Controle de acesso adicionado; cálculo original preservado abaixo.
+require dirname(__DIR__) . '/app/bootstrap.php';
+$accessUser = require_user();
+if ($_SERVER['REQUEST_METHOD'] === 'POST') { check_csrf(); }
+
 function post_value($key, $default) {
     return isset($_POST[$key]) ? $_POST[$key] : $default;
 }
@@ -279,347 +284,163 @@ $loadScript = implode(PHP_EOL, [
     <title>Calculadora de parametros Progress OpenEdge</title>
     <style>
         :root {
-            --bg: #edf3f8;
-            --text: #06223a;
-            --muted: #5b7086;
-            --panel: #ffffff;
-            --line: #c9d8e7;
-            --blue: #0077c8;
-            --cyan: #00a3c7;
-            --green: #00885a;
-            --navy: #071b33;
-            --soft: #f5f9fc;
-            --danger: #c03232;
+            color-scheme: dark;
+            --bg: #0b0e11;
+            --text: #edf1f5;
+            --muted: #a9b3c0;
+            --panel: #14191f;
+            --line: #303943;
+            --blue: #b8ef65;
+            --cyan: #8cded8;
+            --green: #b8ef65;
+            --navy: #f2f6fa;
+            --soft: #1b222a;
+            --danger: #ff8e8e;
         }
-
-        * {
-            box-sizing: border-box;
-        }
-
+        * { box-sizing: border-box; }
         body {
-            margin: 0;
-            background: var(--bg);
-            color: var(--text);
-            font-family: Arial, Helvetica, sans-serif;
+            margin: 0; background: var(--bg); color: var(--text);
+            font-family: "Segoe UI", Arial, Helvetica, sans-serif;
+            font-size: 16px; line-height: 1.5;
         }
-
-        .page {
-            width: min(1760px, calc(100% - 24px));
-            margin: 24px auto;
-        }
-
+        .page { width: min(1600px, calc(100% - 64px)); margin: 36px auto 64px; }
         .hero {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 16px;
-            padding: 24px;
-            border-radius: 14px;
-            color: #fff;
-            background: linear-gradient(120deg, #073763 0%, #0077c8 52%, #00a3c7 100%);
-            box-shadow: 0 18px 45px rgba(7, 27, 51, .12);
+            display: flex; align-items: center; justify-content: space-between;
+            gap: 28px; padding: 12px 0 30px; border-bottom: 1px solid var(--line);
         }
-
         .hero h1 {
-            margin: 0;
-            font-size: clamp(24px, 3vw, 34px);
-            letter-spacing: 0;
+            margin: 0; max-width: 900px; font-size: clamp(26px, 2.6vw, 40px);
+            font-weight: 650; line-height: 1.18; letter-spacing: -.025em;
         }
-
-        .hero p {
-            margin: 8px 0 0;
-            color: rgba(255, 255, 255, .86);
-        }
-
+        .hero p { margin: 14px 0 0; color: var(--muted); max-width: 840px; }
         .badge {
-            border: 1px solid rgba(255, 255, 255, .38);
-            border-radius: 999px;
-            padding: 10px 14px;
-            font-weight: 700;
-            white-space: nowrap;
-            background: rgba(255, 255, 255, .12);
+            flex-shrink: 0; color: var(--green); border: 1px solid #4b6036;
+            border-radius: 999px; padding: 9px 16px; font-size: 14px;
+            font-weight: 600; background: #182219;
         }
-
         .cards {
-            display: grid;
-            grid-template-columns: repeat(4, minmax(0, 1fr));
-            gap: 12px;
-            margin: 18px 0;
+            display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 16px; margin: 28px 0;
         }
-
         .card {
-            background: var(--panel);
-            border: 1px solid var(--line);
-            border-top: 4px solid var(--blue);
-            border-radius: 10px;
-            padding: 16px 18px;
-            box-shadow: 0 10px 24px rgba(7, 27, 51, .06);
+            background: var(--panel); border: 1px solid var(--line);
+            border-radius: 16px; padding: 22px 24px; min-width: 0;
         }
-
-        .card.green {
-            border-top-color: var(--green);
-        }
-
-        .card.cyan {
-            border-top-color: var(--cyan);
-        }
-
-        .metric {
-            color: var(--muted);
-            font-size: 13px;
-            font-weight: 700;
-        }
-
+        .card:first-child { background: #c1f47a; border-color: #c1f47a; }
+        .metric { color: #c6cdd5; font-size: 14px; font-weight: 600; }
         .value {
-            margin-top: 8px;
-            font-size: 28px;
-            font-weight: 800;
-            color: var(--navy);
-            overflow-wrap: anywhere;
+            margin-top: 16px; font-size: clamp(26px, 2.25vw, 36px);
+            font-weight: 650; line-height: 1.2; color: var(--navy);
+            font-variant-numeric: tabular-nums; overflow-wrap: anywhere;
+            letter-spacing: -.025em;
         }
-
-        .hint {
-            margin-top: 6px;
-            color: var(--muted);
-            font-size: 12px;
-            line-height: 1.35;
-        }
-
+        .hint { margin-top: 10px; color: var(--muted); font-size: 14px; line-height: 1.45; }
+        .card:first-child .metric, .card:first-child .hint { color: #334b20; }
+        .card:first-child .value { color: #14220d; }
+        .card.cyan .value { color: var(--cyan); }
         .panel {
-            background: var(--panel);
-            border: 1px solid var(--line);
-            border-radius: 12px;
-            box-shadow: 0 10px 24px rgba(7, 27, 51, .06);
-            margin-bottom: 18px;
+            background: var(--panel); border: 1px solid var(--line);
+            border-radius: 18px; margin-bottom: 24px; min-width: 0;
         }
-
         .panel-title {
-            display: flex;
-            justify-content: space-between;
-            gap: 12px;
-            padding: 16px 18px 0;
+            display: flex; align-items: center; justify-content: space-between;
+            flex-wrap: wrap; gap: 16px; padding: 24px 28px;
         }
-
-        .panel-title h2 {
-            margin: 0;
-            font-size: 18px;
-        }
-
-        form {
-            padding: 16px 18px 18px;
-        }
-
+        .panel-title h2 { margin: 0; font-size: 20px; font-weight: 600; line-height: 1.35; }
+        form { padding: 0 28px 28px; }
         .form-grid {
-            display: grid;
-            grid-template-columns: repeat(6, minmax(120px, 1fr));
-            gap: 12px;
-            align-items: end;
+            display: grid; grid-template-columns: repeat(6, minmax(0, 1fr));
+            gap: 20px 16px; align-items: end;
         }
-
-        label {
-            display: grid;
-            gap: 6px;
-            color: var(--muted);
-            font-size: 12px;
-            font-weight: 700;
+        label { display: grid; gap: 9px; color: #bdc6d0; font-size: 14px; font-weight: 500; min-width: 0; }
+        input, select, textarea {
+            width: 100%; min-width: 0; border: 1px solid #37424e;
+            border-radius: 9px; background: #0e1318; color: var(--text);
+            padding: 11px 12px; font: inherit; font-size: 16px;
+            transition: border-color .15s, box-shadow .15s;
         }
-
-        input,
-        select,
-        textarea {
-            width: 100%;
-            border: 1px solid var(--line);
-            border-radius: 8px;
-            background: #fff;
-            color: var(--text);
-            padding: 8px 10px;
-            font: inherit;
+        input, select { min-height: 46px; }
+        select { padding-right: 26px; }
+        input:hover, select:hover, textarea:hover { border-color: #657381; }
+        input:focus-visible, select:focus-visible, textarea:focus-visible {
+            outline: 2px solid var(--green); outline-offset: 2px; border-color: var(--green);
         }
-
-        input,
-        select {
-            min-height: 38px;
-        }
-
-        textarea {
-            min-height: 96px;
-            resize: vertical;
-            line-height: 1.45;
-        }
-
-        .span-2 {
-            grid-column: span 2;
-        }
-
-        .span-3 {
-            grid-column: span 3;
-        }
-
+        input[readonly] { color: var(--green); background: #1c271b; border-color: #3d5030; font-weight: 600; }
+        textarea { min-height: 108px; resize: vertical; line-height: 1.5; }
+        .span-2 { grid-column: span 2; }
+        .span-3 { grid-column: span 3; }
         .section-heading {
-            grid-column: 1 / -1;
-            margin-top: 8px;
-            padding-top: 10px;
-            border-top: 1px solid var(--line);
-            color: var(--navy);
-            font-size: 13px;
-            font-weight: 800;
+            grid-column: 1 / -1; margin-top: 16px; padding: 22px 0 0;
+            border-top: 1px solid var(--line); color: #e8f1df;
+            font-size: 16px; font-weight: 600; letter-spacing: .01em;
         }
-
-        .check {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            min-height: 38px;
-            color: var(--text);
+        .check { display: flex; align-items: center; gap: 10px; min-height: 46px; color: var(--text); }
+        .check input { width: 18px; height: 18px; min-height: 0; flex-shrink: 0; margin: 0; accent-color: var(--green); }
+        .actions { display: flex; gap: 10px; flex-wrap: wrap; }
+        .form-grid > .actions { grid-column: 1 / -1; margin-top: 10px; padding-top: 24px; border-top: 1px solid var(--line); }
+        button, .button {
+            border: 1px solid transparent; border-radius: 9px; min-height: 44px;
+            padding: 11px 18px; font: inherit; font-size: 14px; font-weight: 650;
+            cursor: pointer; text-decoration: none; display: inline-flex;
+            align-items: center; justify-content: center; line-height: 1.4;
+            transition: background .15s, border-color .15s;
         }
-
-        .check input {
-            width: auto;
-            min-height: 0;
-        }
-
-        .actions {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-
-        button,
-        .button {
-            border: 0;
-            border-radius: 8px;
-            min-height: 38px;
-            padding: 9px 15px;
-            font: inherit;
-            font-weight: 800;
-            cursor: pointer;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .primary {
-            background: var(--green);
-            color: #fff;
-        }
-
-        .secondary {
-            background: var(--blue);
-            color: #fff;
-        }
-
-        .ghost {
-            background: #e8f0f7;
-            color: var(--navy);
-            border: 1px solid var(--line);
-        }
-
-        .table-wrap {
-            overflow-x: hidden;
-            max-width: 100%;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 14px;
-            table-layout: fixed;
-        }
-
-        th {
-            background: var(--green);
-            color: #fff;
-            text-align: left;
-            padding: 12px;
-            white-space: nowrap;
-        }
-
-        td {
-            border-top: 1px solid var(--line);
-            padding: 12px;
-            vertical-align: top;
-        }
-
-        th,
-        td {
-            overflow-wrap: anywhere;
-        }
-
-        tbody tr:nth-child(even) {
-            background: var(--soft);
-        }
-
-        code,
+        .primary { background: var(--green); color: #16220d; padding-inline: 30px; }
+        .primary:hover { background: #d1ff92; }
+        .secondary { background: #24362b; color: #c6f39b; border-color: #465c39; }
+        .secondary:hover { background: #324736; }
+        .ghost { background: #202831; color: #e0e7ef; border-color: #414d5a; }
+        .ghost:hover { background: #303b47; }
+        button:focus-visible, .button:focus-visible { outline: 2px solid var(--green); outline-offset: 3px; }
+        .table-wrap { overflow-x: auto; max-width: 100%; margin: 0 28px 24px; border: 1px solid var(--line); border-radius: 10px; }
+        table { width: 100%; border-collapse: collapse; font-size: 14px; table-layout: auto; }
+        th { background: #222b34; color: #d4dfeb; text-align: left; padding: 14px 16px; white-space: nowrap; font-weight: 600; }
+        td { border-top: 1px solid var(--line); padding: 14px 16px; vertical-align: top; font-variant-numeric: tabular-nums; }
+        tbody tr:nth-child(even) { background: var(--soft); }
+        code, pre { font-family: Consolas, "Cascadia Code", "Courier New", monospace; }
         pre {
-            font-family: Consolas, "Courier New", monospace;
+            margin: 0; white-space: pre; background: #090d11; color: #d2e7cd;
+            border: 1px solid #2b3740; border-radius: 12px; padding: 20px;
+            font-size: 14px; line-height: 1.7; overflow: auto; max-height: 380px; min-width: 0;
+            tab-size: 4;
         }
-
-        pre {
-            margin: 0;
-            white-space: pre;
-            background: #071b33;
-            color: #d7ecff;
-            border-radius: 10px;
-            padding: 14px;
-            line-height: 1.5;
-            overflow: auto;
-            max-height: 340px;
+        .split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 18px; padding: 0 28px 24px; }
+        .note { color: var(--muted); font-size: 14px; line-height: 1.75; padding: 0 28px 24px; overflow-wrap: anywhere; }
+        .note code { color: #d1e9b4; background: #222d22; padding: 2px 5px; border-radius: 4px; }
+        @media (max-width: 1200px) {
+            .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .form-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+            .hero { align-items: flex-start; flex-direction: column; gap: 18px; }
+            .split { grid-template-columns: minmax(0, 1fr); }
         }
-
-        .split {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 14px;
-            padding: 0 18px 18px;
-        }
-
-        .note {
-            color: var(--muted);
-            font-size: 13px;
-            line-height: 1.5;
-            padding: 0 18px 18px;
-        }
-
-        @media (max-width: 1100px) {
-            .cards {
-                grid-template-columns: repeat(2, minmax(0, 1fr));
-            }
-
-            .form-grid {
-                grid-template-columns: repeat(3, minmax(120px, 1fr));
-            }
-
-            .split {
-                grid-template-columns: 1fr;
-            }
-        }
-
         @media (max-width: 680px) {
-            .page {
-                width: min(100% - 12px, 1760px);
-                margin: 12px auto;
-            }
-
-            .hero {
-                align-items: flex-start;
-                flex-direction: column;
-            }
-
-            .cards,
-            .form-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .span-2,
-            .span-3 {
-                grid-column: span 1;
-            }
+            .page { width: calc(100% - 28px); margin: 22px auto 36px; }
+            .hero { padding-bottom: 24px; }
+            .hero h1 { font-size: 28px; }
+            .badge { max-width: 100%; }
+            .cards { gap: 12px; margin: 20px 0; }
+            .card { padding: 18px; }
+            .cards, .form-grid { grid-template-columns: minmax(0, 1fr); }
+            .span-2, .span-3 { grid-column: span 1; }
+            .panel-title { padding: 20px 18px; }
+            form { padding: 0 18px 20px; }
+            .split, .note { padding: 0 18px 20px; }
+            .table-wrap { margin: 0 18px 20px; }
+            .actions { width: 100%; }
+            .actions button { flex: 1 1 auto; }
         }
+        @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; } }
     </style>
 </head>
 <body>
 <main class="page">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:22px">
+        <span>Olá, <?= esc($accessUser['name']) ?></span>
+        <form method="post" action="<?= esc(app_url('logout.php')) ?>" style="padding:0;margin:0">
+            <?= csrf_field() ?>
+            <button class="ghost" type="submit">Sair</button>
+        </form>
+    </div>
     <section class="hero">
         <div>
             <h1>Calculadora de parametros Progress OpenEdge</h1>
@@ -656,6 +477,7 @@ $loadScript = implode(PHP_EOL, [
             <h2>Parametros de entrada</h2>
         </div>
         <form method="post">
+            <?= csrf_field() ?>
             <div class="form-grid">
                 <label class="span-2">ID
                     <input name="db_name" value="<?= htmlspecialchars($dbName) ?>">

@@ -1,0 +1,8 @@
+# Exemplo para tunnel localmente gerenciado. Substitua todos os marcadores.
+# Alternativa recomendada: tunnel gerenciado pelo painel Cloudflare.
+tunnel: SEU-UUID-DO-TUNNEL
+credentials-file: C:\cloudflared\SEU-UUID-DO-TUNNEL.json
+ingress:
+  - hostname: calculadora.seudominio.com
+    service: http://127.0.0.1:8088
+  - service: http_status:404
