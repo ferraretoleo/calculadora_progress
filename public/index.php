@@ -92,7 +92,12 @@ $extraSql1 = trim((string) post_value('extra_sql1', ''));
 $extraSql2 = trim((string) post_value('extra_sql2', ''));
 $dbSize = (float) str_replace(',', '.', (string) post_value('db_size', '262'));
 $dbUnit = (string) post_value('db_unit', 'GB');
-$blockSizeKb = (int) post_value('block_size', 16);
+// Block size permitido: 1, 2, 4 ou 8 KB.
+$allowedBlockSizes = [1, 2, 4, 8];
+$blockSizeKb = (int) post_value('block_size', 8);
+if (!in_array($blockSizeKb, $allowedBlockSizes, true)) {
+    $blockSizeKb = 8;
+}
 $serverRam = (float) str_replace(',', '.', (string) post_value('server_ram', '512'));
 $serverRamUnit = (string) post_value('server_ram_unit', 'GB');
 $reservedRam = (float) str_replace(',', '.', (string) post_value('reserved_ram', '64'));
@@ -512,7 +517,7 @@ $loadScript = implode(PHP_EOL, [
                 </label>
                 <label>Block size
                     <select name="block_size">
-                        <?php foreach ([1, 2, 4, 8, 16, 32, 64] as $size): ?>
+                        <?php foreach ($allowedBlockSizes as $size): ?>
                             <option value="<?= $size ?>" <?= $blockSizeKb === $size ? 'selected' : '' ?>><?= $size ?> KB</option>
                         <?php endforeach; ?>
                     </select>
